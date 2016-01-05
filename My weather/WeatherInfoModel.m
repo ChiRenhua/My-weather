@@ -76,7 +76,10 @@ NSDictionary *weatherDicrionary;
         NSDictionary *environment = [weatherDicrionary objectForKey:@"environment"];
         NSMutableArray *recentWeather = [[weatherDicrionary objectForKey:@"forecast"]objectForKey:@"weather"];
         NSLog(@"temperature:%@,%@,%@,%@,%@,%@,%@",temperature,fengli,shidu,fengxiang,sunRise,sunset,[[recentWeather[0] objectForKey:@"night"] objectForKey:@"type"]);
-        _updataTemperature(weatherInfoNow,environment,recentWeather);
+        if ([weatherDicrionary count] && [environment count] && [recentWeather count]) {
+            _updataTemperature(weatherInfoNow,environment,recentWeather);
+        }
+        
         
 
     }else{
