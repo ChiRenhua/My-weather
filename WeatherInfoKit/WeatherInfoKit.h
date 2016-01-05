@@ -2,7 +2,7 @@
 //  WeatherInfoKit.h
 //  WeatherInfoKit
 //
-//  Created by lgy on 15/12/7.
+//  Created by Martin on 15/12/7.
 //  Copyright © 2015年 Martin. All rights reserved.
 //
 

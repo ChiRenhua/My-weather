@@ -2,7 +2,7 @@
 //  My_weatherUITests.m
 //  My weatherUITests
 //
-//  Created by lgy on 15/11/27.
+//  Created by Martin on 15/11/27.
 //  Copyright © 2015年 Martin. All rights reserved.
 //
 
