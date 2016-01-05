@@ -1,8 +1,8 @@
 //
-//  ViewController.h
-//  My weather
+//  TodayViewController.h
+//  Weather widget
 //
-//  Created by Martin on 15/11/27.
+//  Created by Martin on 15/12/4.
 //  Copyright © 2015年 Martin. All rights reserved.
 //
 
@@ -10,11 +10,7 @@
 #import <CoreLocation/CoreLocation.h>
 #import "WeatherInfoModel.h"
 #import "WeatherInfoFromNet.h"
-#import "Reachability.h"
 
-@interface ViewController : UIViewController<CLLocationManagerDelegate,UIAlertViewDelegate>
+@interface TodayViewController : UIViewController<CLLocationManagerDelegate>
 @property (strong, nonatomic) CLLocationManager* locationManager;
-- (void)updateWeatherdData;
-- (void)loadCacheData;
 @end
-

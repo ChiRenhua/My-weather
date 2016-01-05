@@ -8,9 +8,11 @@
 
 #import <UIKit/UIKit.h>
 
+typedef void (^EnterForeground)();
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
+@property (nonatomic, copy) EnterForeground enterForeground;
 
 
 @end

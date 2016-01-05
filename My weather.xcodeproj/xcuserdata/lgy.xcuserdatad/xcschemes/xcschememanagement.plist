@@ -9,6 +9,16 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>Weather widget.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
+		<key>WeatherInfoKit.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
@@ -23,6 +33,31 @@
 			<true/>
 		</dict>
 		<key>AB01DAC61C0838A10056A17A</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>AB69F0B41C11B6C400500391</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>AB7BBB841C15472700AD8E40</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>AB7BBB8D1C15472700AD8E40</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>AB7BBBA71C15482D00AD8E40</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>AB7BBBB01C15482D00AD8E40</key>
 		<dict>
 			<key>primary</key>
 			<true/>
