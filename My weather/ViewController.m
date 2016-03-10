@@ -20,7 +20,12 @@
 #define ERROR_NET 1
 #define ERROR_GET_DATA 2
 
-@interface ViewController ()
+// 屏幕尺寸
+#define SCREEN_BOUNDS [UIScreen mainScreen].bounds
+
+@interface ViewController ()<UIScrollViewDelegate>
+
+@property (strong,nonatomic) UIScrollView *scrollView;
 
 @property (nonatomic,strong) WeatherInfoModel *wim;        // 天气编码类
 
@@ -28,6 +33,8 @@
 @property (nonatomic) Reachability *wifiReachability;      // wifi是否可用
 
 @end
+NSMutableArray *countryData;                               // 用户存储的城市列表
+
 UILabel *cityLable;                                        // 显示城市名
 UILabel *cityDetialLabel;                                  // 显示城市二级名称
 UILabel *cityTemperatureLable;                             // 显示城市温度
@@ -68,6 +75,9 @@ NSMutableDictionary *weatherDataCacheDictionary;  //天气数据缓存
 // 在初始化的时候执行某些操作
 - (id)init{
     if (self = [super init]) {
+        //初始化ScrolleView
+        [self initScrolleView];
+        
         weatherDataCacheDictionary = [[NSMutableDictionary alloc]init];
         _wim = [[WeatherInfoModel alloc]init];
         __weak typeof(self) weakSelf = self;
@@ -612,6 +622,35 @@ NSMutableDictionary *weatherDataCacheDictionary;  //天气数据缓存
             break;
     }
    
+}
+
+// scrolleview的初始化
+- (void)initScrolleView {
+    [self initCountryData];
+    _scrollView = [[UIScrollView alloc]initWithFrame:CGRectMake(0, 0, SCREEN_BOUNDS.size.width, SCREEN_BOUNDS.size.height)];
+    // 设置内容大小
+    _scrollView.contentSize = CGSizeMake(SCREEN_BOUNDS.size.width * countryData.count, SCREEN_BOUNDS.size.height);
+    // 是否分页
+    _scrollView.pagingEnabled = YES;
+    // 是否反弹
+    _scrollView.bounces = YES;
+    // 是否滚动
+    _scrollView.scrollEnabled = YES;
+    for (int i = 0; i < countryData.count; i++) {
+        UIView *view = [[UIView alloc]initWithFrame:CGRectMake(i*SCREEN_BOUNDS.size.width, 0, SCREEN_BOUNDS.size.width, SCREEN_BOUNDS.size.height)];
+        view.backgroundColor = [UIColor clearColor];
+        [_scrollView addSubview:view];
+        
+    }
+    
+    [self.view addSubview:_scrollView];
+
+}
+
+// 用户添加城市信息初始化
+- (void)initCountryData{
+    countryData = [[NSMutableArray alloc]initWithObjects:@"北京", nil];
+    [countryData addObject:@"天津"];
 }
 
 /*!
