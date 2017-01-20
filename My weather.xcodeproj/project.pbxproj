@@ -80,6 +80,8 @@
 		ABFB39F81C12C90B0076D2C2 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ABFB39F71C12C90B0076D2C2 /* SystemConfiguration.framework */; };
 		ABFB39FA1C12D3530076D2C2 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ABFB39F91C12D3530076D2C2 /* QuartzCore.framework */; };
 		ABFB3A001C1309AB0076D2C2 /* night_background@2x.JPG in Resources */ = {isa = PBXBuildFile; fileRef = ABFB39FF1C1309AB0076D2C2 /* night_background@2x.JPG */; };
+		D73EABBF1E31D01100E45957 /* DrawLines.m in Sources */ = {isa = PBXBuildFile; fileRef = D73EABBE1E31D01100E45957 /* DrawLines.m */; };
+		D73EABC21E31EB7600E45957 /* DrawLines.m in Sources */ = {isa = PBXBuildFile; fileRef = D73EABBE1E31D01100E45957 /* DrawLines.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -216,6 +218,9 @@
 		ABFB39F71C12C90B0076D2C2 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		ABFB39F91C12D3530076D2C2 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		ABFB39FF1C1309AB0076D2C2 /* night_background@2x.JPG */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "night_background@2x.JPG"; sourceTree = "<group>"; };
+		D73EABBD1E31D01100E45957 /* DrawLines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DrawLines.h; sourceTree = "<group>"; };
+		D73EABBE1E31D01100E45957 /* DrawLines.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DrawLines.m; sourceTree = "<group>"; };
+		D73EABC01E31D05200E45957 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -377,6 +382,7 @@
 		AB69F0B61C11B6C500500391 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				D73EABC01E31D05200E45957 /* UIKit.framework */,
 				ABFB39F91C12D3530076D2C2 /* QuartzCore.framework */,
 				ABFB39F71C12C90B0076D2C2 /* SystemConfiguration.framework */,
 				AB69F0B71C11B6C500500391 /* NotificationCenter.framework */,
@@ -387,9 +393,11 @@
 		AB69F0B91C11B6C500500391 /* My Weather */ = {
 			isa = PBXGroup;
 			children = (
-				ABEEDD3F1C11C8C4008E19E5 /* Weather widget.entitlements */,
+				D73EABBD1E31D01100E45957 /* DrawLines.h */,
+				D73EABBE1E31D01100E45957 /* DrawLines.m */,
 				AB69F0BA1C11B6C500500391 /* TodayViewController.h */,
 				AB69F0BB1C11B6C500500391 /* TodayViewController.m */,
+				ABEEDD3F1C11C8C4008E19E5 /* Weather widget.entitlements */,
 				AB69F0C01C11B6C500500391 /* Info.plist */,
 			);
 			name = "My Weather";
@@ -753,6 +761,7 @@
 				AB01DAAB1C0838A10056A17A /* AppDelegate.m in Sources */,
 				ABFB39F61C12C83E0076D2C2 /* Reachability.m in Sources */,
 				AB01DAA81C0838A10056A17A /* main.m in Sources */,
+				D73EABBF1E31D01100E45957 /* DrawLines.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -776,6 +785,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D73EABC21E31EB7600E45957 /* DrawLines.m in Sources */,
 				AB69F0BC1C11B6C500500391 /* TodayViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -870,7 +880,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -907,7 +917,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;

@@ -24,6 +24,10 @@
 }
 
 - (void)getWeatherInfoFromNetWithCityCode:(NSString *)cityCode model:(WeatherInfoModel *)model{
+    if (!cityCode) {
+        return;
+    }
+    
     weatherData = [[NSMutableData alloc]init];
     wim = model;
     NSString *URLString = [WEATHER_URL stringByAppendingString:cityCode];

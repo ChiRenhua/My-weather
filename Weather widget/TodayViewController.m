@@ -8,16 +8,29 @@
 
 #import "TodayViewController.h"
 #import <NotificationCenter/NotificationCenter.h>
+#import "DrawLines.h"
+#import "WeatherInfoModel.h"
+#import "WeatherInfoFromNet.h"
 
 #define WEATHER_IMAGE_WEIGHT 150
 #define WEATHER_IMAGE_HEIGHT 150
 
-@interface TodayViewController () <NCWidgetProviding>{
+#define CurrentWeatherImageWidth 80
+#define CurrentWeatherImageHeight 80
 
-}
-@property (nonatomic,strong) WeatherInfoModel *wim;        // 天气编码类
+#define CompactHeight 110
+#define ExpandedHeight 230
+#define UIScreenWidth self.view.frame.size.width
+
+@interface TodayViewController () <NCWidgetProviding>
+
+@property (nonatomic,strong) WeatherInfoModel *weatherInfoModel;        // 天气编码类
+@property (nonatomic,strong) UIImageView *currentWeatherImage;          // 当前天气图片
+@property (nonatomic,strong) UILabel *currentCity;                      // 当前城市
+@property (nonatomic,strong) UILabel *currentWeatherType;               // 当前天气状态
+@property (nonatomic,strong) UILabel *currentTemperature;               // 当前天气温度
+
 @end
-
 
 // 未来四天的天气状态图
 UIImageView *weatherImageview1;
@@ -45,18 +58,20 @@ WeatherInfoFromNet *wdata;                                 // 获取天气信息
 BOOL isGetInfo;                                            // 判断网络请求是否获取到数据
 BOOL isNetWork;                                            // 判断当前网络是否在工作
 
-NSMutableDictionary *weatherDataCacheDictionary;  //天气数据缓存
+NSMutableDictionary *weatherDataCacheDictionary;           //天气数据缓存
 
 @implementation TodayViewController
 
 - (id)init{
     if (self = [super init]) {
-        // 设置widget的宽高
-        self.preferredContentSize = CGSizeMake(self.view.bounds.size.width, 170);
+        
+        UITapGestureRecognizer *tapGesture =[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(openApp)];
+        [self.view addGestureRecognizer:tapGesture];
+        
          weatherDataCacheDictionary = [[NSMutableDictionary alloc]init];
-        _wim = [[WeatherInfoModel alloc]init];
+        _weatherInfoModel = [[WeatherInfoModel alloc]init];
         __weak typeof(self) weakSelf = self;
-        _wim.updataTemperature = ^(NSDictionary *weatherInfoToday,NSDictionary *enviroment,NSMutableArray *recentWeatherInfo){
+        _weatherInfoModel.updataTemperature = ^(NSDictionary *weatherInfoToday,NSDictionary *enviroment,NSMutableArray *recentWeatherInfo){
             NSMutableArray *weekArray = [[NSMutableArray alloc]init];
             [weekArray addObject:weekLable1];
             [weekArray addObject:weekLable2];
@@ -74,14 +89,20 @@ NSMutableDictionary *weatherDataCacheDictionary;  //天气数据缓存
             [weatherTypeImageView addObject:weatherImageview4];
             
             // 当天温度
-            NSString *Temperature = [[weatherInfoToday objectForKey:@"wendu"] stringByAppendingString:@"°"];
+            NSString *currentTemperature = [[weatherInfoToday objectForKey:@"wendu"] stringByAppendingString:@"°"];
             // 获取当天的天气状态
-            NSString *weatherType = [[recentWeatherInfo[0] objectForKey:@"day"] objectForKey:@"type"];
-            // 天气状态
-            NSString *weatherInfo = [[[@"现在" stringByAppendingString:weatherType] stringByAppendingString:@"，气温"] stringByAppendingString:Temperature];
-            [weatherDataCacheDictionary setObject:weatherInfo forKey:@"weatherInfo"];
-            // 显示当前的天气状态
-            [weatherLable setText:weatherInfo];
+            NSString *currentWeatherType = [[recentWeatherInfo[0] objectForKey:@"day"] objectForKey:@"type"];
+            // 白天还是黑夜
+            NSString *currentWeatherDayOrNight = [weatherInfoToday objectForKey:@"dayOrNight"];
+            
+            [weakSelf updateWeatherTypePicture:weakSelf.currentWeatherImage Type:currentWeatherType DayOrNight:currentWeatherDayOrNight];
+            [weatherDataCacheDictionary setObject:currentWeatherType forKey:@"currentWeatherType"];
+            [weatherDataCacheDictionary setObject:currentWeatherDayOrNight forKey:@"currentWeatherDayOrNight"];
+            [weatherDataCacheDictionary setObject:currentTemperature forKey:@"currentTemperature"];
+            
+            weakSelf.currentWeatherType.text = currentWeatherType;
+            weakSelf.currentTemperature.text = currentTemperature;
+
             // 加载星期数和温度
             for (NSUInteger i = 1; i<5; i++) {
                 NSString *weekTemp = [recentWeatherInfo[i] objectForKey:@"date"];
@@ -112,7 +133,7 @@ NSMutableDictionary *weatherDataCacheDictionary;  //天气数据缓存
             }
             
             // 将最近更新的信息写入到pist文件中
-            [weakSelf.wim saveWeatherDataToPlist:weatherDataCacheDictionary FromMain:false];
+            [weakSelf.weatherInfoModel saveWeatherDataToPlist:weatherDataCacheDictionary FromMain:false];
             
         };
         wdata = [[WeatherInfoFromNet alloc]init];
@@ -120,42 +141,67 @@ NSMutableDictionary *weatherDataCacheDictionary;  //天气数据缓存
     return self;
 }
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    // Do any additional setup after loading the view from its nib.
+- (void)viewWillAppear:(BOOL)animated {
+#ifdef __IPHONE_10_0
+    // 需要折叠
+    self.extensionContext.widgetLargestAvailableDisplayMode = NCWidgetDisplayModeExpanded;
+#endif
     
-    UITapGestureRecognizer *tapGesture =[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(openApp)];
-    [self.view addGestureRecognizer:tapGesture];
+    self.currentWeatherImage = [[UIImageView alloc] initWithFrame:CGRectMake((UIScreenWidth - CurrentWeatherImageWidth) / 2, (CompactHeight - CurrentWeatherImageHeight) / 2, CurrentWeatherImageHeight, CurrentWeatherImageHeight)];
+    [self.view addSubview:self.currentWeatherImage];
     
-    weatherLable = [[UILabel alloc]initWithFrame:CGRectMake((self.view.frame.size.width-50*4)/5, 10, 375, 30)];
-    // 设置文字颜色
-    weatherLable.textColor = [UIColor whiteColor];
-    // 设置文字样式和大小
-    weatherLable.font = [UIFont fontWithName:@"Arial" size:17];
-    // 设置文字内容
-    weatherLable.text = @"......";
-    [self.view addSubview:weatherLable];
+    self.currentCity = [[UILabel alloc] initWithFrame:CGRectMake(50, CompactHeight / 7, 100, 20)];
+    [self.currentCity setFont:[UIFont fontWithName:@"Helvetica-Bold" size:18]];
+    [self.view addSubview:self.currentCity];
+    
+    self.currentTemperature = [[UILabel alloc] initWithFrame:CGRectMake(UIScreenWidth - 70, CompactHeight / 4, 50, 20)];
+    self.currentTemperature.font = [UIFont systemFontOfSize:25];
+    [self.view addSubview:self.currentTemperature];
+    
+    self.currentWeatherType = [[UILabel alloc] initWithFrame:CGRectMake(UIScreenWidth - 100, CompactHeight * 0.7, 100, 20)];
+    self.currentWeatherType.font = [UIFont systemFontOfSize:17];
+    [self.view addSubview:self.currentWeatherType];
+    
+    // 添加各种线条
+    UIImageView *cityLineImageView = [[UIImageView alloc] initWithFrame:CGRectMake(UIScreenWidth / 2 - 70, CompactHeight * 0.22, 55, 12)];
+    UIImage *cityLineImage = [DrawLines getCityLineWithSize:cityLineImageView.bounds.size];
+    cityLineImageView.image = cityLineImage;
+    [self.view addSubview:cityLineImageView];
+    
+    UIImageView *tmpLineImageView = [[UIImageView alloc] initWithFrame:CGRectMake(UIScreenWidth / 2 + 35, CompactHeight * 0.35, 70, 12)];
+    UIImage *tmpLineImage = [DrawLines getTemperatureLineWithSize:tmpLineImageView.bounds.size];
+    tmpLineImageView.image = tmpLineImage;
+    [self.view addSubview:tmpLineImageView];
+    
+    UIImageView *weatherInfoLineImageView = [[UIImageView alloc] initWithFrame:CGRectMake(UIScreenWidth / 2 + 10, CompactHeight * 0.7, 60, 12)];
+    UIImage *weatherInfoLine = [DrawLines getWeatherInfoLineWithSize:weatherInfoLineImageView.bounds.size];
+    weatherInfoLineImageView.image = weatherInfoLine;
+    [self.view addSubview:weatherInfoLineImageView];
+    
+    UIImageView *dividingLineImageView = [[UIImageView alloc] initWithFrame:CGRectMake(10, CompactHeight + 1, UIScreenWidth - 10, 0.5)];
+    [dividingLineImageView setBackgroundColor:[UIColor grayColor]];
+    [self.view addSubview:dividingLineImageView];
     
     /*
      * 向界面添加UIImageView，显示未来天气图标
      */
     // 初始化UIImageView，同时加上布局信息
-    weatherImageview1 = [[UIImageView alloc]initWithFrame:CGRectMake((self.view.frame.size.width-50*4)/5, 75, WEATHER_IMAGE_WEIGHT/3, WEATHER_IMAGE_HEIGHT/3)];
+    weatherImageview1 = [[UIImageView alloc]initWithFrame:CGRectMake((UIScreenWidth-50*4)/5, CompactHeight + 35, WEATHER_IMAGE_WEIGHT/3, WEATHER_IMAGE_HEIGHT/3)];
     // 添加图片到界面中
     [self.view addSubview:weatherImageview1];
     
     // 初始化UIImageView，同时加上布局信息
-    weatherImageview2 = [[UIImageView alloc]initWithFrame:CGRectMake(((self.view.frame.size.width-50*4)/5)*2+50, 75, WEATHER_IMAGE_WEIGHT/3, WEATHER_IMAGE_HEIGHT/3)];
+    weatherImageview2 = [[UIImageView alloc]initWithFrame:CGRectMake(((UIScreenWidth-50*4)/5)*2+50, CompactHeight + 35, WEATHER_IMAGE_WEIGHT/3, WEATHER_IMAGE_HEIGHT/3)];
     // 添加图片到界面中
     [self.view addSubview:weatherImageview2];
     
     // 初始化UIImageView，同时加上布局信息
-    weatherImageview3 = [[UIImageView alloc]initWithFrame:CGRectMake(((self.view.frame.size.width-50*4)/5)*3+50*2, 75, WEATHER_IMAGE_WEIGHT/3, WEATHER_IMAGE_HEIGHT/3)];
+    weatherImageview3 = [[UIImageView alloc]initWithFrame:CGRectMake(((UIScreenWidth-50*4)/5)*3+50*2, CompactHeight + 35, WEATHER_IMAGE_WEIGHT/3, WEATHER_IMAGE_HEIGHT/3)];
     // 添加图片到界面中
     [self.view addSubview:weatherImageview3];
     
     // 初始化UIImageView，同时加上布局信息
-    weatherImageview4 = [[UIImageView alloc]initWithFrame:CGRectMake(((self.view.frame.size.width-50*4)/5)*4+50*3, 75, WEATHER_IMAGE_WEIGHT/3, WEATHER_IMAGE_HEIGHT/3)];
+    weatherImageview4 = [[UIImageView alloc]initWithFrame:CGRectMake(((UIScreenWidth-50*4)/5)*4+50*3, CompactHeight + 35, WEATHER_IMAGE_WEIGHT/3, WEATHER_IMAGE_HEIGHT/3)];
     // 添加图片到界面中
     [self.view addSubview:weatherImageview4];
     
@@ -163,11 +209,11 @@ NSMutableDictionary *weatherDataCacheDictionary;  //天气数据缓存
      * 向界面添加UILable，显示未来天气温度
      */
     // 初始化UILable，同时加上布局信息
-    temperatureLable1 = [[UILabel alloc]initWithFrame:CGRectMake((self.view.frame.size.width-50*4)/5-25, 110, 100, 50)];
+    temperatureLable1 = [[UILabel alloc]initWithFrame:CGRectMake((UIScreenWidth-50*4)/5-25, CompactHeight + 70, 100, 50)];
     // 设置文字居中
     temperatureLable1.textAlignment = NSTextAlignmentCenter;
     // 设置文字颜色
-    temperatureLable1.textColor = [UIColor whiteColor];
+    temperatureLable1.textColor = [UIColor blackColor];
     // 设置文字样式和大小
     temperatureLable1.font = [UIFont fontWithName:@"Arial" size:15];
     // 设置文字内容
@@ -176,11 +222,11 @@ NSMutableDictionary *weatherDataCacheDictionary;  //天气数据缓存
     [self.view addSubview:temperatureLable1];
     
     // 初始化UILable，同时加上布局信息
-    temperatureLable2 = [[UILabel alloc]initWithFrame:CGRectMake(((self.view.frame.size.width-50*4)/5)*2+25, 110, 100, 50)];
+    temperatureLable2 = [[UILabel alloc]initWithFrame:CGRectMake(((UIScreenWidth-50*4)/5)*2+25, CompactHeight + 70, 100, 50)];
     // 设置文字居中
     temperatureLable2.textAlignment = NSTextAlignmentCenter;
     // 设置文字颜色
-    temperatureLable2.textColor = [UIColor whiteColor];
+    temperatureLable2.textColor = [UIColor blackColor];
     // 设置文字样式和大小
     temperatureLable2.font = [UIFont fontWithName:@"Arial" size:15];
     // 设置文字内容
@@ -189,11 +235,11 @@ NSMutableDictionary *weatherDataCacheDictionary;  //天气数据缓存
     [self.view addSubview:temperatureLable2];
     
     // 初始化UILable，同时加上布局信息
-    temperatureLable3 = [[UILabel alloc]initWithFrame:CGRectMake(((self.view.frame.size.width-50*4)/5)*3+50*2-25, 110, 100, 50)];
+    temperatureLable3 = [[UILabel alloc]initWithFrame:CGRectMake(((UIScreenWidth-50*4)/5)*3+50*2-25, CompactHeight + 70, 100, 50)];
     // 设置文字居中
     temperatureLable3.textAlignment = NSTextAlignmentCenter;
     // 设置文字颜色
-    temperatureLable3.textColor = [UIColor whiteColor];
+    temperatureLable3.textColor = [UIColor blackColor];
     // 设置文字样式和大小
     temperatureLable3.font = [UIFont fontWithName:@"Arial" size:15];
     // 设置文字内容
@@ -202,11 +248,11 @@ NSMutableDictionary *weatherDataCacheDictionary;  //天气数据缓存
     [self.view addSubview:temperatureLable3];
     
     // 初始化UILable，同时加上布局信息
-    temperatureLable4 = [[UILabel alloc]initWithFrame:CGRectMake(((self.view.frame.size.width-50*4)/5)*4+50*3-25, 110, 100, 50)];
+    temperatureLable4 = [[UILabel alloc]initWithFrame:CGRectMake(((UIScreenWidth-50*4)/5)*4+50*3-25, CompactHeight + 70, 100, 50)];
     // 设置文字居中
     temperatureLable4.textAlignment = NSTextAlignmentCenter;
     // 设置文字颜色
-    temperatureLable4.textColor = [UIColor whiteColor];
+    temperatureLable4.textColor = [UIColor blackColor];
     // 设置文字样式和大小
     temperatureLable4.font = [UIFont fontWithName:@"Arial" size:15];
     // 设置文字内容
@@ -218,62 +264,59 @@ NSMutableDictionary *weatherDataCacheDictionary;  //天气数据缓存
      * 向界面添加UILable，显示未来星期数
      */
     // 初始化UILable，同时加上布局信息
-    weekLable1 = [[UILabel alloc]initWithFrame:CGRectMake((self.view.frame.size.width-50*4)/5-25, 50, 100, 30)];
+    weekLable1 = [[UILabel alloc]initWithFrame:CGRectMake((UIScreenWidth-50*4)/5-25, CompactHeight + 5, 100, 30)];
     // 设置文字居中
     weekLable1.textAlignment = NSTextAlignmentCenter;
     // 设置文字样式和大小
     weekLable1.font = [UIFont fontWithName:@"Arial" size:15];
     // 设置文字颜色
-    weekLable1.textColor = [UIColor whiteColor];
+    weekLable1.textColor = [UIColor blackColor];
     // 设置文字内容
     weekLable1.text = @"——";
     // 添加文字到界面中
     [self.view addSubview:weekLable1];
     
     // 初始化UILable，同时加上布局信息
-    weekLable2 = [[UILabel alloc]initWithFrame:CGRectMake(((self.view.frame.size.width-50*4)/5)*2+25, 50, 100, 30)];
+    weekLable2 = [[UILabel alloc]initWithFrame:CGRectMake(((UIScreenWidth-50*4)/5)*2+25, CompactHeight + 5, 100, 30)];
     // 设置文字居中
     weekLable2.textAlignment = NSTextAlignmentCenter;
     // 设置文字样式和大小
     weekLable2.font = [UIFont fontWithName:@"Arial" size:15];
     // 设置文字颜色
-    weekLable2.textColor = [UIColor whiteColor];
+    weekLable2.textColor = [UIColor blackColor];
     // 设置文字内容
     weekLable2.text = @"——";
     // 添加文字到界面中
     [self.view addSubview:weekLable2];
     
     // 初始化UILable，同时加上布局信息
-    weekLable3 = [[UILabel alloc]initWithFrame:CGRectMake(((self.view.frame.size.width-50*4)/5)*3+50*2-25, 50, 100, 30)];
+    weekLable3 = [[UILabel alloc]initWithFrame:CGRectMake(((UIScreenWidth-50*4)/5)*3+50*2-25, CompactHeight + 5, 100, 30)];
     // 设置文字居中
     weekLable3.textAlignment = NSTextAlignmentCenter;
     // 设置文字样式和大小
     weekLable3.font = [UIFont fontWithName:@"Arial" size:15];
     // 设置文字颜色
-    weekLable3.textColor = [UIColor whiteColor];
+    weekLable3.textColor = [UIColor blackColor];
     // 设置文字内容
     weekLable3.text = @"——";
     // 添加文字到界面中
     [self.view addSubview:weekLable3];
     
     // 初始化UILable，同时加上布局信息
-    weekLable4 = [[UILabel alloc]initWithFrame:CGRectMake(((self.view.frame.size.width-50*4)/5)*4+50*3-25, 50, 100, 30)];
+    weekLable4 = [[UILabel alloc]initWithFrame:CGRectMake(((UIScreenWidth-50*4)/5)*4+50*3-25, CompactHeight + 5, 100, 30)];
     // 设置文字居中
     weekLable4.textAlignment = NSTextAlignmentCenter;
     // 设置文字样式和大小
     weekLable4.font = [UIFont fontWithName:@"Arial" size:15];
     // 设置文字颜色
-    weekLable4.textColor = [UIColor whiteColor];
+    weekLable4.textColor = [UIColor blackColor];
     // 设置文字内容
     weekLable4.text = @"——";
     // 添加文字到界面中
     [self.view addSubview:weekLable4];
     [self loadCacheData];
-
-}
-
-- (void)viewWillAppear:(BOOL)animated{
     [self startLocation];
+
 }
 
 - (void)loadCacheData{
@@ -297,6 +340,18 @@ NSMutableDictionary *weatherDataCacheDictionary;  //天气数据缓存
     [self updateWeek:weekLable4 week:[weatherDataCache objectForKey:@"week4"] TemperatureUILable:temperatureLable4 Temperature:[weatherDataCache objectForKey:@"weekTemp4"]];
     
     [weatherLable setText:[weatherDataCache objectForKey:@"weatherInfo"]];
+    
+    // 读取缓存的天气信息
+    NSString *currentWeatherType = [weatherDataCache objectForKey:@"currentWeatherType"];
+    NSString *currentWeatherDayOrNight = [weatherDataCache objectForKey:@"dayOrNight"];
+    NSString *currentCityName = [weatherDataCache objectForKey:@"cityName"];
+    NSString *currentWeatherTemperature = [weatherDataCache objectForKey:@"currentTemperature"];
+    
+    [self updateWeatherTypePicture:self.currentWeatherImage Type:currentWeatherType DayOrNight:currentWeatherDayOrNight];
+    self.currentCity.text = currentCityName;
+    self.currentWeatherType.text = currentWeatherType;
+    self.currentTemperature.text = currentWeatherTemperature;
+
 }
 
 
@@ -330,9 +385,14 @@ NSMutableDictionary *weatherDataCacheDictionary;  //天气数据缓存
                        for (CLPlacemark *place in placemarks) {
                            isGetInfo = true;
                            NSString *cityName = place.locality;                          // 获取城市名称
+                           
+                           self.currentCity.text = cityName;
+                           [weatherDataCacheDictionary setObject:cityName forKey:@"cityName"];
+                           [self.weatherInfoModel saveWeatherDataToPlist:weatherDataCacheDictionary FromMain:false];
+                           
                            NSString *cityDetialName = place.subLocality;                 // 获取二级城市名称
-                           NSString *cityCode = [_wim translateCityNameToCityCode:cityName cityDetialName:cityDetialName];   // 获取城市代码
-                           [wdata getWeatherInfoFromNetWithCityCode:cityCode model:_wim];                          // 从网上获取当地天气信息
+                           NSString *cityCode = [_weatherInfoModel translateCityNameToCityCode:cityName cityDetialName:cityDetialName];   // 获取城市代码
+                           [wdata getWeatherInfoFromNetWithCityCode:cityCode model:_weatherInfoModel];                          // 从网上获取当地天气信息
                            NSLog(@"name,%@",place.name);                       // 位置名
                            NSLog(@"thoroughfare,%@",place.thoroughfare);       // 街道
                            NSLog(@"subThoroughfare,%@",place.subThoroughfare); // 子街道
@@ -362,11 +422,6 @@ NSMutableDictionary *weatherDataCacheDictionary;  //天气数据缓存
     // If there's an update, use NCUpdateResultNewData
 
     completionHandler(NCUpdateResultNewData);
-}
-
-//消除间隔
-- (UIEdgeInsets)widgetMarginInsetsForProposedMarginInsets:(UIEdgeInsets)defaultMarginInsets{
-    return UIEdgeInsetsMake(0,0,0,0);
 }
 
 // 加载未来天气图片
@@ -455,12 +510,27 @@ NSMutableDictionary *weatherDataCacheDictionary;  //天气数据缓存
     }
 }
 
+#pragma mark - UI
+// 去掉左侧留白
+- (UIEdgeInsets)widgetMarginInsetsForProposedMarginInsets:(UIEdgeInsets)defaultMarginInsets {
+    return UIEdgeInsetsZero;
+}
+
+// 展开／收起 监听
+- (void)widgetActiveDisplayModeDidChange:(NCWidgetDisplayMode)activeDisplayMode withMaximumSize:(CGSize)maxSize {
+    if (activeDisplayMode == NCWidgetDisplayModeExpanded) {
+        self.preferredContentSize = CGSizeMake([UIScreen mainScreen].bounds.size.width, ExpandedHeight);
+    }else {
+        self.preferredContentSize = CGSizeMake([UIScreen mainScreen].bounds.size.width, CompactHeight);
+    }
+}
+
 // 加载未来星期数
 - (void)updateWeek:(UILabel *)weekLable week:(NSString *)week TemperatureUILable:(UILabel *)temperatureUILable Temperature:(NSString *)temperature  {
     [weekLable setText:week];
     // 设置不限制换行
     temperatureUILable.numberOfLines = 0;
-    [temperatureUILable setTextColor:[UIColor whiteColor]];
+    [temperatureUILable setTextColor:[UIColor blackColor]];
     [temperatureUILable setText:temperature];
 }
 
