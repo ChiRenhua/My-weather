@@ -150,8 +150,9 @@ NSMutableDictionary *weatherDataCacheDictionary;           //天气数据缓存
     self.currentWeatherImage = [[UIImageView alloc] initWithFrame:CGRectMake((UIScreenWidth - CurrentWeatherImageWidth) / 2, (CompactHeight - CurrentWeatherImageHeight) / 2, CurrentWeatherImageHeight, CurrentWeatherImageHeight)];
     [self.view addSubview:self.currentWeatherImage];
     
-    self.currentCity = [[UILabel alloc] initWithFrame:CGRectMake(50, CompactHeight / 7, 100, 20)];
+    self.currentCity = [[UILabel alloc] initWithFrame:CGRectMake(10, CompactHeight / 7, UIScreenWidth / 2 - 85, 20)];
     [self.currentCity setFont:[UIFont fontWithName:@"Helvetica-Bold" size:18]];
+    self.currentCity.textAlignment = NSTextAlignmentRight;
     [self.view addSubview:self.currentCity];
     
     self.currentTemperature = [[UILabel alloc] initWithFrame:CGRectMake(UIScreenWidth - 70, CompactHeight / 4, 50, 20)];
